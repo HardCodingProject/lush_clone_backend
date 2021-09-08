@@ -123,7 +123,7 @@ router.post('/login', async function (req, res, next) {
             const tokenResult = await collection.updateOne(tokenQuery, changeData);
             if (tokenResult.modifiedCount === 1) {
                 res.send({ ret: 1, jwtToken: resultToken });
-            } else {
+            } else { 
                 res.send({ ret: 0, data: 'token not issued' });
             }
         } else {
