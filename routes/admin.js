@@ -8,8 +8,26 @@ const ObjectId = require('mongodb').ObjectId;
 const mongourl = 'mongodb://id304:pw304@1.234.5.158:37017/id304';
 
 // 파일첨부 모듈
+const fs = require('fs');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
+
+// 크롤링 데이터 일괄 추가(테스트 중)
+// POST > localhost:3000/admin/product/crawling
+router.post('/product/crawling', async function (req, res, next) {
+    try {
+        // 2. 크롤링된 JSON파일 불러오기
+        const dataBuffer = fs.readFileSync('./crawling/lush-product.json');
+        const dataJSON = dataBuffer.toString();
+        const data = JSON.parse(dataJSON);
+        console.log(data);
+        res.send({ret: 1, data: data});
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
 
 // 물품 일괄 추가(테스트 완료)
 // POST > localhost:3000/admin/product/register
