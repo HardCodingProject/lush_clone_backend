@@ -12,6 +12,7 @@
     "debug": "~2.6.9",
     "ejs": "~2.6.1",
     "express": "~4.16.1",
+    "geckodriver": "^2.0.4",
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.1.1",
@@ -19,5 +20,8 @@
     "multer": "^1.4.3",
     "rand-token": "^1.0.1",
     "selenium-webdriver": "^4.0.0-rc-1"
+  },
+  "devDependencies": {
+    "chromedriver": "^93.0.1"
   }
 }
