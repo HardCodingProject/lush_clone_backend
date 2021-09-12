@@ -17,49 +17,19 @@ const run = async () => {
   const driver = await new webdriver.Builder().forBrowser('chrome').build();
 
   // 크롬에 주소 입력
-  await driver.get('https://lush.co.kr/goods/goods_list.php?cateCd=001013');
-
-  // 화면에 표시되는 항목 URL 크롤링
-  let exitBanner = await driver.findElements(By.css('div#grb-close-x'));
-  const result = await driver.findElements(By.css('div.list > ul.prdList > li'));
-
+  await driver.get('https://lush.co.kr/board/list.php?memNo=&noheader=&searchField=subject&searchWord=&bdId=shop');
+  
+  // 팝업창 종료
+  let exitBanner = await driver.findElements(By.xpath('//*[@id="grb-close-x"]'));
   await exitBanner[0].click();
 
-  const list = new Array();
-  for (let i = 0; i < result.length; i++) {
-    const productURL = await result[i].findElement(By.css('div.txt > a')).getAttribute('href');
-    list.push(productURL);
-  }
+  const result = await driver.findElements(By.xpath('//*[@id="content"]/div/div[2]/div[2]/nav/ul/li/a')); 
+  console.log(result.length); 8
 
-  console.log(list);
-
-  for (let i = 0; i < result.length; i++) {
-    console.log("============" + (i + 1) + "============");
+  //여기에 한번크롤링 실행
+  for(let i = 0; i < result.length; i++){
+    const result = await driver.findElements(By.xpath('//*[@id="content"]/div/div[2]/div[2]/nav/ul/li/a'));
     await result[i].click();
-
-    // 4초간 정지
-    setTimeout(async () => { }, 4000);
-
-    const productName = await driver.findElement(By.css('div.tit > h2'));
-
-    console.log(productName.getText());
-
-
-    try {
-      await driver.wait(() => { return false; }, 10000);
-    } catch (error) {
-      console.error(error);
-    }
-
-
-    driver.navigate().back();
-
-
-    try {
-      await driver.wait(() => { return false; }, 10000);
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   // 4초후 종료

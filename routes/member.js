@@ -238,7 +238,7 @@ router.get('/checkpw', checkToken, async function (req, res, next) {
     }
 });
 
-// 로그아웃
+// 로그아웃(테스트완료)
 // POST > localhost:3000/member/logout
 router.post('/logout', checkToken, async function (req, res, next) {
     try {
@@ -269,7 +269,7 @@ router.post('/logout', checkToken, async function (req, res, next) {
     }
 });
 
-// 회원탈퇴
+// 회원탈퇴(테스트완료)
 // DELETE > localhost:3000/member/delete
 router.delete('/delete', checkToken, async function (req, res, next) {
     try {
