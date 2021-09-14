@@ -1,4 +1,4 @@
-// 파일명: member.js
+// 파일명: lush_member.js
 var express = require('express');
 var router = express.Router();
 
@@ -38,7 +38,7 @@ router.post('/join', async function (req, res, next) {
 
         // 3. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
 
         // 4. DB에 memberData 저장
         const result = await collection.insertOne(memberData);
@@ -67,7 +67,7 @@ router.get('/checkid', async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. DB에서 아이디를 조건으로 개수 조회
         const query = { _id: id };
@@ -98,7 +98,7 @@ router.post('/login', async function (req, res, next) {
 
         // 3. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
 
         // 4. DB조회
         const query = { _id: id, password: hashPassword };
@@ -151,7 +151,7 @@ router.put('/update', checkToken, async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. DB에 변경할 정보 업데이트
         const query = { _id: id };
@@ -182,7 +182,7 @@ router.put('/changepw', checkToken, async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. 새로운 비밀번호
         const salt = req.idx;
@@ -217,7 +217,7 @@ router.get('/checkpw', checkToken, async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. 새로운 비밀번호
         const salt = req.idx;
@@ -247,7 +247,7 @@ router.post('/logout', checkToken, async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
       
         // 3. DB UPDATE를 통해 TOKEN값 삭제
         const query = { _id: id};
@@ -278,7 +278,7 @@ router.delete('/delete', checkToken, async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushMember');
+        const collection = dbconn.db('id304').collection('lush_member');
       
         // 3. DB삭제
         const query = { _id: id};

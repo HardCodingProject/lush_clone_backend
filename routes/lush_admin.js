@@ -1,4 +1,4 @@
-// 파일명: admin.js
+// 파일명: lush_admin.js
 var express = require('express');
 var router = express.Router();
 
@@ -120,17 +120,20 @@ router.delete('/product/delete', async function (req, res, next) {
     }
 });
 
-// 물품 일괄 수정(테스트완료)
+// 물품 일괄 수정(테스트완료) => 물품 이미지 수정은 넣지 않음
 // PUT > localhost:3000/admin/product/update
 router.put('/product/update', async function (req, res, next) {
     try {
         // 1. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db('id304').collection('lushProduct');
+        var collection = dbconn.db('id304').collection('lush_product');
+
+        // 수정할 물품이 여러개인지 판단할 코드 변수
         const code = req.body.code;
-        var cnt = 0;
 
-
+        // 수정완료된 물품의 개수
+        var count = 0;
+        
         // 2. DB수정
         if (Array.isArray(code)) {
             for (let i = 0; i < code.length; i++) {
@@ -140,17 +143,16 @@ router.put('/product/update', async function (req, res, next) {
                         name: req.body.name[i],                 // 물품명
                         price: Number(req.body.price[i]),       // 물품가격
                         weight: Number(req.body.weight[i]),     // 물품무게
-                        quantity: Number(req.body.quantity[i]), // 물품개수
                         tag: req.body.tag[i]                    // 물품태그
                     }
                 };
                 const result = await collection.updateOne(query, changeData);
-                cnt += result.matchedCount;
+                count += result.matchedCount;
             }
 
             // 3. 결과 값 리턴
-            if (cnt === req.body.code.length) {
-                return res.send({ ret: 1, data: `${cnt}개의 물품을 수정했습니다.` });
+            if (count === req.body.code.length) {
+                return res.send({ ret: 1, data: `${count}개의 물품을 수정했습니다.` });
             }
             res.send('물품 수정을 실패하였습니다.');
         } else {
@@ -160,7 +162,6 @@ router.put('/product/update', async function (req, res, next) {
                     name: req.body.name,                 // 물품명
                     price: Number(req.body.price),       // 물품가격
                     weight: Number(req.body.weight),     // 물품무게
-                    quantity: Number(req.body.quantity), // 물품개수
                     tag: req.body.tag                    // 물품태그
                 }
             };
@@ -179,20 +180,21 @@ router.put('/product/update', async function (req, res, next) {
 });
 
 // 물품 목록 조회(테스트완료)
-// GET > localhost:3000/admin/product/list?page=페이지&search=검색명
+// GET > localhost:3000/admin/product/list?page=페이지&search=검색명&category_code=카테고리코드
 router.get('/product/list', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const page = Number(req.query.page);
         const search = req.query.search;
+        const category_code = Number(req.query.category_code);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lushProduct');
+        const collection = dbconn.db('id304').collection('lush_product');
 
-        // 3. 입력 값을 포함하여 검색
-        const query = { name: new RegExp(search, 'i') };
-        const result = await collection.find(query, { projection: { filedata: 0, filename: 0, filetype: 0 } }).sort({ _id: 1 }).skip((page - 1) * 16).limit(16).toArray();
+        // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { name: new RegExp(search, 'i'), category_code: category_code };
+        const result = await collection.find(query, { projection: { image_first: 0, image_second: 0, type_first: 0, type_second: 0 } }).sort({ _id: 1 }).skip((page - 1) * 20).limit(20).toArray();
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
@@ -211,13 +213,11 @@ router.get('/product', async function (req, res, next) {
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db('id304').collection('lushProduct');
+        var collection = dbconn.db('id304').collection('lush_product');
 
         // 3. 입력 값을 포함하여 검색
         const query = { _id: code };
-        const result = await collection.findOne(query, { projection: { filedata: 0, filename: 0, filetype: 0 } });
-
-        console.log(result);
+        const result = await collection.findOne(query, { projection: { image_first: 0, image_second: 0, type_first: 0, type_second: 0 } });
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
@@ -227,25 +227,42 @@ router.get('/product', async function (req, res, next) {
     }
 });
 
-// 이미지 표시(테스트완료)
-// GET > localhost:3000/admin/product/image?code=물품코드
+// 이미지 표시(테스트중)
+// GET > localhost:3000/admin/product/image?code=물품코드&number=이미지번호
 router.get('/product/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const code = req.query.code;
+        const code = Number(req.query.code);
+        const number = Number(req.query.number);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db('id304').collection('lushProduct');
+        var collection = dbconn.db('id304').collection('lush_product');
 
         // 3. 조회 조건
-        const query = { _id: Number(code) };
-        const result = await collection.findOne(query, { projection: { filedata: 1, filetype: 1 } });
+        const query = { _id: code };
+        const result = await collection.findOne(query, { projection: { image_first: 1, image_second: 1, type_first: 1, type_second: 1 } });
 
-        // 4. 이미지로 전송
-        console.log(result.filetype);
-        res.contentType(result.filetype);
-        res.send(result.filedata.buffer);
+        // 4. 입력받은 number에 맞게 이미지로 전송
+        if (number === 1) {
+            res.contentType('image/jpeg')
+            res.send(result.image_first.buffer);
+        }
+
+        if (number === 2) {
+            res.contentType('image/jpeg')
+            res.send(result.image_second.buffer);
+        }
+
+        if (number === 3) {
+            res.contentType('image/png')
+            res.send(result.type_first.buffer);
+        }
+
+        if (number === 4) {
+            res.contentType('image/png')
+            res.send(result.type_second.buffer);
+        }
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -290,7 +307,7 @@ router.post('/category/register', async function (req, res, next) {
 });
 
 // 카테고리 목록 조회(테스트 완료)
-// POST > localhost:3000/admin/category/list?name=카테고리명
+// GET > localhost:3000/admin/category/list?name=카테고리명
 router.get('/category/list', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
@@ -306,6 +323,60 @@ router.get('/category/list', async function (req, res, next) {
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 카테고리 목록 수정(테스트 완료)
+// PUT > localhost:3000/admin/category/update
+router.put('/category/update', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const code = Number(req.body.category_code);
+        const name = req.body.name;
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_category');
+
+        // 3. 입력 값을 포함하여 검색
+        const query = { _id: code };
+        const changeData = { $set: { name: name } };
+        const result = await collection.updateOne(query, changeData);
+
+        // 4. 결과 값 반환
+        if (result.matchedCount === 1) {
+            return res.send({ ret: 1, data: `${result.matchedCount}개의 물품을 수정했습니다.` });
+        }
+        res.send('물품 수정을 실패하였습니다.');
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 카테고리 목록 삭제(테스트 완료)
+// DELETE > localhost:3000/admin/category/delete
+router.delete('/category/delete', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const code = Number(req.query.category_code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_category');
+
+        // 3. 입력 값을 포함하여 검색
+        const query = { _id: code };
+        const result = await collection.deleteOne(query);
+
+        // 4. 결과 값 반환
+        if (result.matchedCount === 1) {
+            return res.send({ ret: 1, data: `${result.matchedCount}개의 카테고리를 삭제하였습니다.` });
+        }
+        res.send({ ret: 0, data: '카테고리 삭제에 실패했습니다.' });
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
