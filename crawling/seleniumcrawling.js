@@ -1,21 +1,19 @@
-// MongoDB 모듈
+// MongoDB 라이브러리
 const mongoClient = require('mongodb').MongoClient;
-const ObjectId = require('mongodb').ObjectId;
 const mongourl = 'mongodb://id304:pw304@1.234.5.158:37017/id304';
 
-// AXIOS 모듈
+// AXIOS 라이브러리
 const axios = require('axios');
 
-// SELENIUM 모듈
+// SELENIUM 라이브러리
 const { Builder, By, Key, until } = require('selenium-webdriver');
 
 (async function example() {
-    let driver = await new Builder()
-        .forBrowser('firefox')
-        .build();
+    let driver = await new Builder().forBrowser('firefox').build();
+    
     try {
         // 러쉬 홈페이지 실행
-        await driver.get('https://www.lush.co.kr/goods/goods_list.php?cateCd=001007011');
+        await driver.get('https://www.lush.co.kr/goods/goods_list.php?cateCd=001001001');
 
         // Javascript를 실행하여 UserAgent를 확인한다.
         let userAgent = await driver.executeScript("return navigator.userAgent;")
@@ -67,7 +65,6 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
 
         // URL을 크롤링한 개수만큼 반복문을 수행한다.
         for (let i = 0; i < productURL.length; i++) {
-            console.log("==============" + i + "번째 =============");
             // 뒤로가기 버튼을 클릭하면 초기화되기 때문에 한번 더 호출해준다.
             const productURL = await driver.findElements(By.css('div.list > ul.prdList > li'));
 
@@ -108,13 +105,13 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
             for (let i = 0; i < productImageList.length; i++) {
                 console.log(productImageList[i]);
             }
-
+ //*[@id="content"]/div[2]/div[1]/div/div[3]/div/a
             // 상세 페이지의 데이터를 저장하기 위한 변수를 설정한다.
             const productName = await driver.findElement(By.css('div.tit > h2'));
             const productTag = await driver.findElement(By.css('div.hashtag'));
             const productPrice = await driver.findElement(By.css('li.price > div > strong'));
-            const productWeight = await driver.findElement(By.xpath('//*[@id="frmView"]/div/div/div[3]/ul/li[2]/div/span'));
-            const productCategory = await driver.findElement(By.xpath('//*[@id="content"]/div[2]/div[1]/div/div[3]/div/a'));
+            const productWeight = await driver.findElement(By.xpath('/html/body/div[3]/div[2]/div/div[2]/div[2]/form/div/div/div[3]/ul/li[2]/div/span'));
+            // const productCategory = await driver.findElement(By.xpath('//*[@id="content"]/div[2]/div[1]/div/div[3]/div/a'));
 
             // PRODUCT DATA
             const productData = {
@@ -126,7 +123,7 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
                 productTag: await productTag.getText(),
                 productPrice: await productPrice.getText(),
                 productWeight: await productWeight.getText(),
-                productCategory: await productCategory.getText()
+                productCategory: '배쓰 밤'
             }
 
             productList.push(productData);
@@ -188,8 +185,8 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
                     _id: result.value.seq, // 물품 코드
                     category_code: productList[i].productCategory, // 카테고리 코드
                     name: productList[i].productName, // 물품명
-                    price: productPrice, // 물품 가격
-                    weight: productWeight, // 물품 무게
+                    price: parseInt(productPrice), // 물품 가격
+                    weight: parseInt(productWeight), // 물품 무게
                     tag: productList[i].productTag, // 물품 태그
                     image_first: productList[i].productImageFirst,
                     image_second: productImageSecond,
