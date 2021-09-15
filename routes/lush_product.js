@@ -11,11 +11,27 @@ const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // 로그인 토큰 발행
-const randToken = require('rand-token');
-const jwt = require('jsonwebtoken');
-const secretKey = require('../config/secretkey').secretKey;
-const options = require('../config/secretkey').options;
 const checkToken = require('../config/auth').checkToken;
+
+// 물품후기 목록 개수 조회(테스트 완료) => 페이지네이션을 위한 기능
+// GET > localhost:3000/product/review/count
+router.get('/review/count', async function (req, res, next) {
+    try {
+        // 1. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_review');
+
+        // 2. 전체 후기 개수 검색
+        const query = {};
+        const result = await collection.countDocuments(query);
+
+        // 3. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
 
 // 물품후기 목록 조회(테스트 완료) => 후기는 10개씩 페이지네이션
 // GET > localhost:3000/product/review/list?page=페이지
@@ -121,9 +137,9 @@ router.post('/review/register', checkToken, upload.array('image'), async functio
     }
 });
 
-// 물품후기 수정(테스트 중)
-// POST > localhost:3000/product/review/update
-router.post('/review/update', checkToken, upload.array('image'), async function (req, res, next) {
+// 물품후기 수정(테스트 완료)
+// PUT > localhost:3000/product/review/update
+router.put('/review/update', checkToken, upload.array('image'), async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const product_review_no = Number(req.body.review_no);
@@ -132,28 +148,83 @@ router.post('/review/update', checkToken, upload.array('image'), async function 
         const review_rating = Number(req.body.review_rating);
 
         // 2. DB변경
+        const dbconn = await mongoClient.connect(mongourl);
         collection = dbconn.db('id304').collection('lush_product_review');
 
         // 3. 조건설정
         const query = { _id: product_review_no , member_id: member_id };
-        
-        // 변경할 데이터
-        const changeData = {
-            content      : review_content,
-            rating       : review_rating,
-            originalname : req.files[0].originalname,
-            filedata     : req.files[0].buffer,
-            filetype     : req.files[0].mimetype,
-        }
-        
-        // 9. product_review를 DB에 넣기
-        result = await collection.insertOne(product_review);
+        console.log(req.files.length);
 
-        // 10. 결과 값 반환
-        if (result.insertedId === product_review._id) {
-            return res.send({ ret: 1, data: `${product_review.member_id}님의 후기 작성이 성공했습니다.` });
+        // 이미지가 첨부되어있지 않을 경우
+        if(req.files.length === 0){
+            // 변경할 데이터
+            const changeData = {
+                $set: {
+                    content: review_content,
+                    rating: review_rating
+                }
+            }
+
+            // 4. 물품 후기 내용을 업데이트하기
+            const result = await collection.updateOne(query, changeData);
+            
+            // 5. 결과 값 반환
+            if(result.matchedCount === 1){
+                return res.send({ ret: 1, data: `${result.matchedCount}개의 후기가 수정되었습니다.` });
+            }
+            res.send({ret: 0, data: '후기작성을 실패했습니다.'});
         }
-        res.send({ ret: 0, data: '후기 작성 실패했습니다.' });
+        // 이미지도 함께 수정할 경우
+        else {
+            // 변경할 데이터
+            const changeData = {
+                $set: {
+                    content: review_content,
+                    rating: review_rating,
+                    originalname: req.files[0].originalname,
+                    filedata: req.files[0].buffer,
+                    filetype: req.files[0].mimetype,
+                }
+            }
+
+            // 4. 물품 후기 내용을 업데이트하기
+            const result = await collection.updateOne(query, changeData);
+
+            // 5. 결과 값 반환
+            if(result.matchedCount === 1){
+                return res.send({ ret: 1, data: `${result.matchedCount}개의 후기가 수정되었습니다.` });
+            }
+            res.send({ret: 0, data: '후기작성을 실패했습니다.'});
+        }
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품후기 삭제(테스트 완료)
+// PUT > localhost:3000/product/review/delete
+router.delete('/review/delete', checkToken, async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_review_no = Number(req.body.review_no);
+        const member_id = req.idx;
+
+        // 2. DB변경
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_review');
+
+        // 3. 조건설정
+        const query = { _id: product_review_no , member_id: member_id };
+
+        // 4. 조건에 맞는 데이터 DB에서 삭제
+        const result = await collection.deleteOne(query);
+
+        // 5. 결과 값 반환
+        if (result.deletedCount === 1) {
+            return res.send({ ret: 1, data: `${result.deletedCount}개의 후기가 삭제되었습니다.` });
+        }
+        res.send({ ret: 0, data: '후기삭제를 실패했습니다.' });
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
