@@ -30,7 +30,7 @@ router.get('/review/list', async function (req, res, next) {
 
         // 3. 입력 값을 포함하여 검색
         const query = {};
-        const result = await collection.find(query, { projection: { originalname: 0, filedate: 0, filetype: 0 } }).sort({ _id: 1 }).skip((page - 1) * 10).limit(10).toArray();
+        const result = await collection.find(query, { projection: { originalname: 0, filedata: 0, filetype: 0 } }).sort({ _id: 1 }).skip((page - 1) * 10).limit(10).toArray();
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
@@ -40,9 +40,32 @@ router.get('/review/list', async function (req, res, next) {
     }
 });
 
-// 물품후기 목록 등록(테스트 중)
-// GET > localhost:3000/product/review/register
-router.get('/review/register', checkToken, upload.array('image'), async function (req, res, next) {
+// 자신이 작성한 물품후기 조회(테스트 완료)
+// GET > localhost:3000/product/review/list-one
+router.get('/review/list-one', checkToken, async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const member_id = req.idx;
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_review');
+
+        // 3. 입력 값을 포함하여 검색
+        const query = { member_id: member_id };
+        const result = await collection.findOne(query, { projection: { originalname: 0, filedata: 0, filetype: 0 } });
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품후기 등록(테스트 완료)
+// POST > localhost:3000/product/review/register
+router.post('/review/register', checkToken, upload.array('image'), async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const member_id = req.idx;
@@ -61,26 +84,76 @@ router.get('/review/register', checkToken, upload.array('image'), async function
         // 4. 사용자의 이름을 변수에 저장
         const member_name = result.name;
 
-        // 5. DB변경
+        // 5. DB변경 후 물품후기 번호 받아오기
+        collection = dbconn.db('id304').collection('seq_lush_product_review');
+        result = await collection.findOneAndUpdate({ _id: 'SEQ_PRODUCT_REVIEW_NO' }, { $inc: { seq: 1 } });
+
+        // 6. 물품후기 번호를 변수에 저장하기
+        const product_review_no = result.value.seq;
+
+        // 7. DB변경
         collection = dbconn.db('id304').collection('lush_product_review');
 
-        // 6. DB에 넣을 데이터 가공
+        // 8. DB에 넣을 데이터 가공
         const product_review = {
+            _id    : product_review_no,
             member_id    : member_id,
             product_code : product_code,
             content      : review_content,
             rating       : review_rating,
             originalname : req.files[0].originalname,
-            filedata     : req.files[0].filedata,
-            filetype     : req.files[0].filetype,
+            filedata     : req.files[0].buffer,
+            filetype     : req.files[0].mimetype,
             regdate      : new Date()
         }
 
-        // 7. product_review를 DB에 넣기
+        // 9. product_review를 DB에 넣기
         result = await collection.insertOne(product_review);
 
-        // 4. 결과 값 반환
-        res.send({ ret: 1, data: result });
+        // 10. 결과 값 반환
+        if (result.insertedId === product_review._id) {
+            return res.send({ ret: 1, data: `${product_review.member_id}님의 후기 작성이 성공했습니다.` });
+        }
+        res.send({ ret: 0, data: '후기 작성 실패했습니다.' });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품후기 수정(테스트 중)
+// POST > localhost:3000/product/review/update
+router.post('/review/update', checkToken, upload.array('image'), async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_review_no = Number(req.body.review_no);
+        const member_id = req.idx;
+        const review_content = req.body.review_content;
+        const review_rating = Number(req.body.review_rating);
+
+        // 2. DB변경
+        collection = dbconn.db('id304').collection('lush_product_review');
+
+        // 3. 조건설정
+        const query = { _id: product_review_no , member_id: member_id };
+        
+        // 변경할 데이터
+        const changeData = {
+            content      : review_content,
+            rating       : review_rating,
+            originalname : req.files[0].originalname,
+            filedata     : req.files[0].buffer,
+            filetype     : req.files[0].mimetype,
+        }
+        
+        // 9. product_review를 DB에 넣기
+        result = await collection.insertOne(product_review);
+
+        // 10. 결과 값 반환
+        if (result.insertedId === product_review._id) {
+            return res.send({ ret: 1, data: `${product_review.member_id}님의 후기 작성이 성공했습니다.` });
+        }
+        res.send({ ret: 0, data: '후기 작성 실패했습니다.' });
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
