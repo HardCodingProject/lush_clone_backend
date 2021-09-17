@@ -7,7 +7,6 @@ const crypto = require('crypto');
 
 // MongoDB 모듈
 const mongoClient = require('mongodb').MongoClient;
-const ObjectId = require('mongodb').ObjectId;
 const mongourl = 'mongodb://id304:pw304@1.234.5.158:37017/id304';
 
 // 로그인 토큰 발행

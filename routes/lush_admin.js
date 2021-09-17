@@ -61,7 +61,7 @@ router.post('/product/register', upload.array('image'), async function (req, res
 
             // 9. num_of_images의 값 만큼 반복문 수행
             for (let i = 0; i < num_of_images; i++) {
-                result = await collection.findOneAndDelete(query, updateData);
+                result = await collection.findOneAndUpdate(query, updateData);
                 const product_image_no = result.value.seq;
 
                 // 10. DB에 넣을 데이터 가공하기
@@ -70,7 +70,8 @@ router.post('/product/register', upload.array('image'), async function (req, res
                     product_code: product_data._id,        // 물품 코드
                     originalname: req.files[i].originalname, // 파일 이름
                     filedata    : req.files[i].buffer,     // 파일 버퍼
-                    filetype    : req.files[i].mimetype    // 파일 타입
+                    filetype    : req.files[i].mimetype,   // 파일 타입
+                    priority    : Number(i + 1)            // 우선 순위
                 })
             }
 
@@ -80,7 +81,7 @@ router.post('/product/register', upload.array('image'), async function (req, res
             // 12. 결과 값 반환
             result = await collection.insertMany(product_image_data);
 
-            if (result.insertedCount === product_image_data) {
+            if (result.insertedCount === product_image_data.length) {
                 return res.send({ ret: 1, data: '물품 등록을 성공했습니다.' });
             }
             return res.send({ ret: 0, data: '물품 등록을 실패했습니다.' });
@@ -163,7 +164,6 @@ router.put('/product/update', upload.array('image'), async function (req, res, n
                 var count = 0;
 
                 // 변경할 이미지의 정보를 받아오기
-                const product_image_no = req.body.product_image_no;
                 const num_of_images = req.files.length;
 
                 // DB변경
@@ -171,7 +171,7 @@ router.put('/product/update', upload.array('image'), async function (req, res, n
 
                 // 파일의 개수만큼 반복문 수행
                 for (let i = 0; i < num_of_images; i++) {
-                    query = { _id: Number(product_image_no[i]) };
+                    query = { product_code: product_code, priority: Number(i + 1) };
                     changeData = {
                         $set: {
                             originalname: req.files[i].originalname,
@@ -217,11 +217,10 @@ router.put('/product/update', upload.array('image'), async function (req, res, n
 });
 
 // 물품 목록 조회
-// GET > http://localhost:3000/admin/product/list?page=페이지&search=검색명&category_code=카테고리코드
+// GET > http://localhost:3000/admin/product/list?search=검색명&category_code=카테고리코드
 router.get('/product/list', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const page = Number(req.query.page);
         const search = req.query.search;
         const category_code = Number(req.query.category_code);
 
@@ -230,8 +229,8 @@ router.get('/product/list', async function (req, res, next) {
         const collection = dbconn.db('id304').collection('lush_product');
 
         // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
-        const query = { name: new RegExp(search, 'i'), category_code: new RegExp(category_code, 'i') };
-        const result = await collection.find(query).sort({ _id: 1 }).skip((page - 1) * 20).limit(20).toArray();
+        const query = { name: new RegExp(search, 'i'), category_code: category_code };
+        const result = await collection.find(query).sort({ _id: 1 }).toArray();
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
@@ -265,25 +264,24 @@ router.get('/product', async function (req, res, next) {
 });
 
 // 물품 이미지 표시
-// GET > http://localhost:8080/admin/product/image?no=물품이미지번호&code=물품코드
+// GET > http://localhost:3000/admin/product/image?code=물품코드&priority=물품이미지순서
 router.get('/product/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_image_no = Number(req.query.no);
         const product_code = Number(req.query.code);
+        const product_priority = Number(req.query.priority);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db('id304').collection('lush_product_image');
 
         // 3. 조회 조건
-        const query = { _id: product_image_no, product_code: product_code };
+        const query = { product_code: product_code, priority: product_priority };
         const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
-        console.log(result);
 
         // 4. 이미지 출력
         res.contentType(result.filetype);
-        res.send(result.buffer);
+        res.send(result.filedata.buffer);
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -291,25 +289,24 @@ router.get('/product/image', async function (req, res, next) {
 });
 
 // 물품 타입 이미지 표시
-// GET > http://localhost:8080/admin/product/image?type-no=물품이미지번호&code=물품코드
-router.get('/product/image', async function (req, res, next) {
+// GET > http://localhost:3000/admin/product/type-image?code=물품코드&priority=물품이미지순서
+router.get('/product/type-image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_image_type_no = Number(req.query.type-no);
         const product_code = Number(req.query.code);
+        const product_priority = Number(req.query.priority);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db('id304').collection('lush_product_type_image');
 
         // 3. 조회 조건
-        const query = { _id: product_image_type_no, product_code: product_code };
+        const query = { product_code: product_code, priority: product_priority };
         const result = await collection.findOne(query, { projection: { name, originalname: 1, filedata: 1, filetype: 1 } });
-        console.log(result);
 
         // 4. 이미지 출력
         res.contentType(result.filetype);
-        res.send(result.buffer);
+        res.send(result.filedata.buffer);
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });

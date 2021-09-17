@@ -13,6 +13,127 @@ const upload = multer({ storage: multer.memoryStorage() });
 // 로그인 토큰 발행
 const checkToken = require('../config/auth').checkToken;
 
+
+// 물품 한 개 조회
+// GET > http://localhost:3000/product?code=물품코드
+router.get('/', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_code = Number(req.query.code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        var collection = dbconn.db('id304').collection('lush_product');
+
+        // 3. 입력 값을 포함하여 검색
+        const query = { _id: product_code };
+        const result = await collection.findOne(query);
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품 목록 조회
+// GET > http://localhost:3000/product/list?page=페이지&search=검색명&category_code=카테고리코드
+router.get('/list', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const page = Number(req.query.page);
+        const search = req.query.search;
+        const category_code = Number(req.query.category_code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product');
+
+        // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { name: new RegExp(search, 'i'), category_code: new RegExp(category_code, 'i') };
+        const result = await collection.find(query).sort({ _id: 1 }).skip((page - 1) * 20).limit(20).toArray();
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품 메인 이미지 목록 조회
+// GET > http://localhost:3000/product/list
+router.get('/image/list', async function (req, res, next) {
+    try {
+        // 1. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_image');
+
+        // 2. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { priority: 1 };
+        const result = await collection.find(query).sort({ _id: 1 }).toArray();
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품 이미지 표시
+// GET > http://localhost:8080/product/image?no=물품이미지번호&code=물품코드
+router.get('/image', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_image_no = Number(req.query.no);
+        const product_code = Number(req.query.code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        var collection = dbconn.db('id304').collection('lush_product_image');
+
+        // 3. 조회 조건
+        const query = { _id: product_image_no, product_code: product_code };
+        const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
+        console.log(result);
+
+        // 4. 이미지 출력
+        res.contentType(result.filetype);
+        res.send(result.buffer);
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품 타입 이미지 표시
+// GET > http://localhost:8080/admin/product/image?type-no=물품이미지번호&code=물품코드
+router.get('/product/image', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_image_type_no = Number(req.query.type-no);
+        const product_code = Number(req.query.code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        var collection = dbconn.db('id304').collection('lush_product_type_image');
+
+        // 3. 조회 조건
+        const query = { _id: product_image_type_no, product_code: product_code };
+        const result = await collection.findOne(query, { projection: { name, originalname: 1, filedata: 1, filetype: 1 } });
+        console.log(result);
+
+        // 4. 이미지 출력
+        res.contentType(result.filetype);
+        res.send(result.buffer);
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
 // 물품후기 목록 개수 조회(테스트 완료) => 페이지네이션을 위한 기능
 // GET > localhost:3000/product/review/count
 router.get('/review/count', async function (req, res, next) {
@@ -230,5 +351,6 @@ router.delete('/review/delete', checkToken, async function (req, res, next) {
         res.send({ ret: -1, data: error });
     }
 });
+
 
 module.exports = router;
