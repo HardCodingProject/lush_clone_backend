@@ -25,7 +25,6 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
 
         // 제품 상세페이지로 들어가기 위한 링크를 저장하는 변수
         const productURL = await driver.findElements(By.css('div.txt a'));
-        console.log(productURL.length);
 
         // 페이지 로딩을 위해 2초간 대기한다.
         try {

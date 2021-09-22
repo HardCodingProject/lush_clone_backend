@@ -62,9 +62,56 @@ router.get('/list', async function (req, res, next) {
     }
 });
 
-// 물품 메인 이미지 목록 조회
-// GET > http://localhost:3000/product/list
+// 물품 이미지 목록 조회
+// GET > http://localhost:3000/product/image/list?code=물품코드
 router.get('/image/list', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_code = Number(req.query.code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_image');
+
+        // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { product_code: product_code };
+        const result = await collection.find(query).sort({ priority: 1 }).toArray();
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 물품 타입 이미지 목록 조회
+// GET > http://localhost:3000/product/type-image/list?code=물품코드
+router.get('/type-image/list', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_code = Number(req.query.code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_type_image');
+
+        // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { product_code: product_code };
+        const result = await collection.find(query).sort({ priority: 1 }).toArray();
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+
+// 물품 메인 이미지 목록 조회
+// GET > http://localhost:3000/product/main-image/list
+router.get('/main-image/list', async function (req, res, next) {
     try {
         // 1. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -82,26 +129,45 @@ router.get('/image/list', async function (req, res, next) {
     }
 });
 
+// 물품 타입 메인 이미지 목록 조회
+// GET > http://localhost:3000/product/type-main-image/list
+router.get('/type-main-image/list', async function (req, res, next) {
+    try {
+        // 1. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_type_image');
+
+        // 2. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { priority: 1 };
+        const result = await collection.find(query).sort({ _id: 1 }).toArray();
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
 // 물품 이미지 표시
-// GET > http://localhost:8080/product/image?no=물품이미지번호&code=물품코드
+// GET > http://localhost:3000/product/image?code=물품코드&priority=물품이미지순서
 router.get('/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_image_no = Number(req.query.no);
         const product_code = Number(req.query.code);
+        const product_priority = Number(req.query.priority);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db('id304').collection('lush_product_image');
 
         // 3. 조회 조건
-        const query = { _id: product_image_no, product_code: product_code };
+        const query = { product_code: product_code, priority: product_priority };
         const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
-        console.log(result);
 
         // 4. 이미지 출력
         res.contentType(result.filetype);
-        res.send(result.buffer);
+        res.send(result.filedata.buffer);
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -109,32 +175,31 @@ router.get('/image', async function (req, res, next) {
 });
 
 // 물품 타입 이미지 표시
-// GET > http://localhost:8080/admin/product/image?type-no=물품이미지번호&code=물품코드
-router.get('/product/image', async function (req, res, next) {
+// GET > http://localhost:3000/product/type-image?code=물품코드&priority=물품이미지순서
+router.get('/type-image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_image_type_no = Number(req.query.type-no);
         const product_code = Number(req.query.code);
+        const product_priority = Number(req.query.priority);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db('id304').collection('lush_product_type_image');
 
         // 3. 조회 조건
-        const query = { _id: product_image_type_no, product_code: product_code };
-        const result = await collection.findOne(query, { projection: { name, originalname: 1, filedata: 1, filetype: 1 } });
-        console.log(result);
+        const query = { product_code: product_code, priority: product_priority };
+        const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
 
         // 4. 이미지 출력
         res.contentType(result.filetype);
-        res.send(result.buffer);
+        res.send(result.filedata.buffer);
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
     }
 });
 
-// 물품후기 목록 개수 조회(테스트 완료) => 페이지네이션을 위한 기능
+// 물품후기 목록 개수 조회 => 페이지네이션을 위한 기능
 // GET > localhost:3000/product/review/count
 router.get('/review/count', async function (req, res, next) {
     try {
@@ -154,7 +219,7 @@ router.get('/review/count', async function (req, res, next) {
     }
 });
 
-// 물품후기 목록 조회(테스트 완료) => 후기는 10개씩 페이지네이션
+// 물품후기 조회 => 후기는 10개씩 페이지네이션
 // GET > localhost:3000/product/review/list?page=페이지
 router.get('/review/list', async function (req, res, next) {
     try {
@@ -177,7 +242,31 @@ router.get('/review/list', async function (req, res, next) {
     }
 });
 
-// 자신이 작성한 물품후기 조회(테스트 완료)
+// 물품후기 이미지 조회
+// GET > http://localhost:3000/product/review/image?no=물품이미지번호
+router.get('/review/image', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_review_no = Number(req.query.product_review_no);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_review');
+
+        // 3. 입력 값을 포함하여 검색
+        const query = { _id: product_review_no };
+        const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
+
+        // 4. 결과 값 반환
+        res.contentType(result.filetype);
+        res.send(result.filedata.buffer);
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 자신이 작성한 물품후기 조회
 // GET > localhost:3000/product/review/list-one
 router.get('/review/list-one', checkToken, async function (req, res, next) {
     try {
@@ -200,8 +289,8 @@ router.get('/review/list-one', checkToken, async function (req, res, next) {
     }
 });
 
-// 물품후기 등록(테스트 완료)
-// POST > localhost:3000/product/review/register
+// 물품후기 등록
+// POST > http://localhost:3000/product/review/register
 router.post('/review/register', checkToken, upload.array('image'), async function (req, res, next) {
     try {
         // 1. 전달 값 받기
@@ -258,7 +347,7 @@ router.post('/review/register', checkToken, upload.array('image'), async functio
     }
 });
 
-// 물품후기 수정(테스트 완료)
+// 물품후기 수정
 // PUT > localhost:3000/product/review/update
 router.put('/review/update', checkToken, upload.array('image'), async function (req, res, next) {
     try {
@@ -323,8 +412,8 @@ router.put('/review/update', checkToken, upload.array('image'), async function (
     }
 });
 
-// 물품후기 삭제(테스트 완료)
-// PUT > localhost:3000/product/review/delete
+// 물품후기 삭제
+// DELETE > localhost:3000/product/review/delete
 router.delete('/review/delete', checkToken, async function (req, res, next) {
     try {
         // 1. 전달 값 받기
