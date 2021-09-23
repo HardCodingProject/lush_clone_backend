@@ -14,9 +14,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 // 로그인 토큰 
 const checkToken = require('../config/auth').checkToken;
 
+// 상세 물품 페이지에서 받아올 수 있는 항목은 아이디, 물품코드, 물품개수가 있다.
+
+
 // 주문추가
-// GET > localhost:3000/order/addlist
-router.get('/addlist', checkToken, async function (req, res, next) {
+// PUT > localhost:3000/order/addlist
+router.put('/addlist', checkToken, async function (req, res, next) {
     try {
         //전달되는 값
         const idx = req.idx;            //이메일 토큰 확인후 전달되는 id값
@@ -25,35 +28,26 @@ router.get('/addlist', checkToken, async function (req, res, next) {
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db('id304').collection('seq_lushOrder');
-
-        //seq넘버 1증가
-        const query = { _id: "SEQ_ORDER_NO" };
-        const SeqResult = await collection.findOneAndUpdate
-        (query, { $inc: { seq: 1 } });
-
-        //seq넘버, 주문번호 = orderNo
-        const orderNo = SeqResult.value.seq;
-
-        //저장할 컬렉션 변경
         collection = dbconn.db("id304").collection("lush_addlist");
-
+        
         //저장할 내용 물품 코드, 입력된 개수 받아오기
-        const object = {
-            _id : idx, //아이디
-            code : code,    // 품목코드
-            cnt : Number(cnt),  //수량
-            // regdate : new Date(),   //주문시간
-        }
+        const obj = {
+            member_id    : idx,
+            product_code : req.body.product_code,
+            product_count: req.body.product_count,
+            flag         : false,
+            order        : false
+            }
+        //flag값은 seq혼동을 방지하기위함
+        //order값은 주문이 완료된것인지 진행중인것인지를 판별하기 위함
+        //order값이 true 일경우 이미 완료된 주문
+
         //db에 저장
-        const result = await collection.insertOne(object);
+        const result = await collection.insertOne(obj);
         dbconn.close();
 
-        //flag true값 변환, seqNo를 1인 하나로 부여하기위함
-        //동시주문시 seqNo 혼용 방지를 위함
-        flag = true;
 
-        if(result1.insertedId === orderNo){
+        if(result.insertedId === orderNo){
             return res.send({ret:1,data:`주문번호 ${orderNo} 주문 추가 성공`});
         }
         res.send({ret:0, data:`주문 추가 실패`});
@@ -64,20 +58,22 @@ router.get('/addlist', checkToken, async function (req, res, next) {
     }
 });
 
-//주문 내역 불러오기, 주문하기 직전 주문추가했던 물품들 조회
+//주문 추가했던 물품들의 목록
 //http://127.0.0.1:3000/order/orderlist
 router.get('/orderlist', checkToken, async function(req,res,next) {
     try {
         
         const _id = req.idx;
+        const order = req.order;
+        //false값 어떻게??
         
         //db연동
         const dbconn = await mongoclient.connect(mongourl);
         var collection = dbconn.db("id304").collection("order7");
 
         //주문내역 불러오는 조건
-        const query= {_id : _id};
-
+        //아이디동일, order값이 false일 경우
+        const query= {_id : _id , order : order };
         const result = await collection.find(query).toArray();
 
         //주문내역을 반복 , 물품에 대한정보 맞춰 찾아오기
@@ -104,6 +100,56 @@ router.get('/orderlist', checkToken, async function(req,res,next) {
     
 });
 
+//최종주문하기
+// Post > localhost:3000/order/order
+router.post('/order', checkToken, async function (req, res, next) {
+    try {
+        
+        // 1. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        var collection = dbconn.db('id304').collection('seq_lushOrder');
+
+        // 2. 주문번호 가져오기
+        const query = { _id: "SEQ_ORDER_NO" };
+        const seqResult = await collection.findOneAndUpdate(query, { $inc: { seq: 1 } });
+
+        //컬렉션 변경
+        collection = dbconn.db("id304").collection("order7");
+
+        //체크된 품목들의 품목코드, 개수 받아오기 idx에 해당하는 모든것 가져오기
+        const query = {member_id: idx };
+        const result = await collection.find(query).toArray();
+
+        let count = 0;
+        const orderno = seqResult.value.seq;
+        const adress_code = req.body.adress_code;
+
+        for(let i = 0; i < result.length; i++){
+            
+            const query = {member_id: idx};
+            const changeData = {$set: {flag: true, order: true, oderno: orderno, regdate: new Data(), address: adress_code}};
+
+            const result1 = await collection.updateOne(query, changeData);
+
+            if(result1.matchedCount === 1){
+                count += result1.matchedCount;
+            }
+        }
+
+        if(result1.length === count){
+            return res.send({ret: 1, data: '주문이 완료되었습니다.'});
+        }
+        res.send({ret: 0, data: '주문을 실패했습니다.'});
+
+
+
+       
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: 1, data: error });
+    }
+});
+
 //선택하여 주문 취소
 //http://127.0.0.1:3000/order/deleteSelect
 router.delete('/deleteSelect',checkToken,async function(req, res, next) {
@@ -128,27 +174,6 @@ router.delete('/deleteSelect',checkToken,async function(req, res, next) {
         console.error(error);
     }
 });
-
-//최종주문하기
-// GET > localhost:3000/order/order
-router.get('/order', checkToken, async function (req, res, next) {
-    try {
-        //체크된 품목들의 품목코드, 개수 받아오기
-
-        //DB연동
-
-
-        //DB에 저장
-       
-
-
-       
-    } catch (error) {
-        console.error(error);
-        res.send({ ret: 1, data: error });
-    }
-});
-
 
 
 // 주문결정
@@ -183,6 +208,15 @@ router.get('/order', checkToken, async function (req, res, next) {
             orderPhone: req.body.phone, // 휴대폰번호
             orderAddr: req.body.address, // 주소
             regdate: new Date() // 주문일자
+        }
+
+        
+        //아무 주문도 추가하지않았을때 에는 flag값이 true
+        //flag값이 트루일때만 seq넘버가 증가
+        if(req.body.flag === true){
+            const query = { _id: "SEQ_ORDER_NO" };
+            const SeqResult = await collection.findOneAndUpdate
+            (query, { $inc: { seq: 1 } });
         }
 
         console.log(orderData);
