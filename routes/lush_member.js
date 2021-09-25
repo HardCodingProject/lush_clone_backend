@@ -16,7 +16,7 @@ const secretKey = require('../config/secretkey').secretKey;
 const options = require('../config/secretkey').options;
 const checkToken = require('../config/auth').checkToken;
 
-// 회원가입(테스트 완료)
+// 회원가입 => 아이디, 비밀번호, 비밀번호확인, 이름, 이메일, 휴대폰번호, 우편번호, 배송주소
 // POST > localhost:3000/member/join
 router.post('/join', async function (req, res, next) {
     try {
@@ -24,14 +24,15 @@ router.post('/join', async function (req, res, next) {
         const salt = req.body.id;
         const hashPassword = crypto.createHmac('sha256', salt).update(req.body.password).digest('hex');
 
-        // 2. 전달되는 값 받기(아이디, 비밀번호, 이름, 이메일, 휴대폰번호, 주소, 등록일자)
+        // 2. 전달되는 값 받기(아이디, 비밀번호, 이름, 이메일, 휴대폰번호, 우편번호, 배송주소, 등록일자)
         const memberData = {
             _id: req.body.id,
             password: hashPassword,
             name: req.body.name,
             email: req.body.email,
             phone: req.body.phone,
-            address: req.body.address,
+            zip_code: req.body.zip_code,
+            shipping_address: req.body.shipping_address,
             regdate: new Date()
         }
 
@@ -57,7 +58,7 @@ router.post('/join', async function (req, res, next) {
     }
 });
 
-// 아이디 중복확인(테스트 완료)
+// 아이디 중복확인
 // GET > localhost:3000/member/checkid?id=회원아이디
 router.get('/checkid', async function (req, res, next) {
     try {
@@ -83,7 +84,7 @@ router.get('/checkid', async function (req, res, next) {
     }
 });
 
-// 로그인(테스트 완료)
+// 로그인
 // POST > localhost:3000/member/login
 router.post('/login', async function (req, res, next) {
     try {
@@ -137,7 +138,7 @@ router.post('/login', async function (req, res, next) {
     }
 });
 
-// 회원정보수정(이름, 이메일, 휴대폰번호, 주소) => 테스트완료
+// 회원정보수정(이름, 이메일, 휴대폰번호, 우편번호, 배송주소)
 // PUT > localhost:3000/member/update
 router.put('/update', checkToken, async function (req, res, next) {
     try {
@@ -146,7 +147,8 @@ router.put('/update', checkToken, async function (req, res, next) {
         const name = req.body.name;
         const email = req.body.email;
         const phone = req.body.phone;
-        const address = req.body.address;
+        const zip_code = req.body.zip_code;
+        const shipping_address = req.body.shipping_address
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -154,7 +156,7 @@ router.put('/update', checkToken, async function (req, res, next) {
 
         // 3. DB에 변경할 정보 업데이트
         const query = { _id: id };
-        const changeData = { $set: { name: name, email: email, phone: phone, address: address } };
+        const changeData = { $set: { name: name, email: email, phone: phone, zip_code: zip_code, shipping_address: shipping_address } };
         const result = await collection.updateOne(query, changeData);
 
         // 4. DB닫기
@@ -171,7 +173,7 @@ router.put('/update', checkToken, async function (req, res, next) {
     }
 });
 
-// 비밀번호 변경(테스트 완료)
+// 비밀번호 변경
 // PUT > localhost:3000/member/changepw
 router.put('/changepw', checkToken, async function (req, res, next) {
     try {
@@ -197,7 +199,7 @@ router.put('/changepw', checkToken, async function (req, res, next) {
 
         // 6. 결과 값 반환
         if (result.matchedCount === 1) {
-            return res.send({ ret: 1, data: '비밀번호 수정이 완료하였습니다.' });
+            return res.send({ ret: 1, data: '비밀번호 수정을 성공하였습니다.' });
         }
         res.send({ ret: 0, data: '비밀번호 수정을 실패하였습니다.' });
     } catch (error) {
@@ -206,13 +208,13 @@ router.put('/changepw', checkToken, async function (req, res, next) {
     }
 });
 
-// 비밀번호 체크(테스트 완료)
-// GET > localhost:3000/member/checkpw?password=비밀번호
+// 비밀번호 체크 => 이전에 사용한 비밀번호인 경우 사용할 수 없음
+// GET > localhost:3000/member/checkpw
 router.get('/checkpw', checkToken, async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const id = req.idx;
-        const newPassword = req.query.password;
+        const newPassword = req.body.newPassword;
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -237,7 +239,7 @@ router.get('/checkpw', checkToken, async function (req, res, next) {
     }
 });
 
-// 로그아웃(테스트완료)
+// 로그아웃
 // POST > localhost:3000/member/logout
 router.post('/logout', checkToken, async function (req, res, next) {
     try {
@@ -268,7 +270,7 @@ router.post('/logout', checkToken, async function (req, res, next) {
     }
 });
 
-// 회원탈퇴(테스트완료)
+// 회원탈퇴
 // DELETE > localhost:3000/member/delete
 router.delete('/delete', checkToken, async function (req, res, next) {
     try {
