@@ -2,7 +2,7 @@
 var express = require('express');
 var router = express.Router();
 
-// MongoDB 모듈
+// MongoDB 라이브러리
 const mongoClient = require('mongodb').MongoClient;
 const mongourl = 'mongodb://id304:pw304@1.234.5.158:37017/id304';
 
@@ -15,7 +15,7 @@ const checkToken = require('../config/auth').checkToken;
 
 // 배송정보등록(배송지번호, 회원아이디, 배송지이름, 받으실분, 받으실곳(우편번호, 배송주소), 휴대폰번호)
 // POST > localhost:3000/shipping/register
-router.POST('/register', checkToken, async function (req, res, next) {
+router.post('/register', checkToken, async function (req, res, next) {
     try {
         // 1. DB연결
         const dbconn = await mongoClient.connect(mongourl);
