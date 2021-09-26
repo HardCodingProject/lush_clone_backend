@@ -9,6 +9,7 @@ var memberRouter = require('./routes/lush_member');
 var adminRouter = require('./routes/lush_admin');
 var productRouter = require('./routes/lush_product');
 var shippingRouter = require('./routes/lush_shipping');
+var orderRouter = require('./routes/lush_order');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use('/member', memberRouter);
 app.use('/admin', adminRouter);
 app.use('/product', productRouter);
 app.use('/shipping', shippingRouter);
+app.use('/order', orderRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
