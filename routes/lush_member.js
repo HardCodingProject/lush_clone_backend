@@ -23,7 +23,7 @@ router.post('/join', async function (req, res, next) {
         // 1. 비밀번호 암호화 => 아이디 값은 고유하기 때문에 솔트 값으로 지정
         const salt = req.body.id;
         const hashPassword = crypto.createHmac('sha256', salt).update(req.body.password).digest('hex');
-
+  
         // 2. 전달되는 값 받기(아이디, 비밀번호, 이름, 이메일, 휴대폰번호, 우편번호, 배송주소, 등록일자)
         const memberData = {
             _id: req.body.id,
