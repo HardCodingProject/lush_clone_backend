@@ -66,6 +66,7 @@ router.get('/image/list', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const product_code = Number(req.query.code);
+        console.log(product_code);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -73,10 +74,12 @@ router.get('/image/list', async function (req, res, next) {
 
         // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
         const query = { product_code: product_code };
-        const result = await collection.find(query).sort({ priority: 1 }).toArray();
+        const result = await collection.findOne(query, {projection:{filedata:1, filetype:1}});
 
         // 4. 결과 값 반환
-        res.send({ ret: 1, data: result });
+        res.contentType(result.filetype);
+        res.send(result.filedata.buffer);
+        res.end;
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -97,7 +100,8 @@ router.get('/list', async function (req, res, next) {
 
         // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
         const query = { category_code: category_code };
-        const result = await collection.find(query).sort({ _id: 1 }).skip((page - 1) * 20).limit(20).toArray();
+        const result = await collection.find(query).sort({ _id: 1 }).toArray();
+        // const result = await collection.find(query).sort({ _id: 1 }).skip((page - 1) * 20).limit(20).toArray();
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
