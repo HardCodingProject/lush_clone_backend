@@ -16,8 +16,8 @@ const checkToken = require('../config/auth').checkToken;
 // 상세 물품 페이지에서 받아올 수 있는 항목은 아이디, 물품코드, 물품개수가 있다.
 
 // 장바구니에 물품추가 => 해결
-// PUT > localhost:3000/order/addlist
-router.put('/addlist', checkToken, async function (req, res, next) {
+// PUT > localhost:3000/order/addcart
+router.put('/addcart', checkToken, async function (req, res, next) {
     try {
         //전달되는 값
         const idx = req.idx; // 회원아이디
@@ -27,10 +27,12 @@ router.put('/addlist', checkToken, async function (req, res, next) {
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
-        collection = dbconn.db("id304").collection("lush_addlist");
+        collection = dbconn.db("id304").collection("lush_order");
 
+        //이용자가 일치하고 추가할 물품의 코드가 일치해야한다
         var query = { member_id: idx, product_code: product_code };
         var result = await collection.findOne(query);
+        
 
         // 해당 번호의 물품이 존재하지 않을경우,
         if (result === null) {
@@ -82,15 +84,15 @@ router.put('/addlist', checkToken, async function (req, res, next) {
 });
 
 // 장바구니 물품 목록 => 고민
-//http://127.0.0.1:3000/order/orderlist
-router.get('/orderlist', checkToken, async function (req, res, next) {
+//http://127.0.0.1:3000/order/cart
+router.get('/cart', checkToken, async function (req, res, next) {
     try {
         // 전달 값 받기
         const member_id = req.idx;
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db("id304").collection("lush_addlist");
+        var collection = dbconn.db("id304").collection("lush_order");
 
         //주문내역 불러오는 조건
         //아이디동일, order값이 false일 경우
@@ -120,7 +122,7 @@ router.put('/cnt-minus', checkToken, async function (req, res, next) {
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
-        collection = dbconn.db("id304").collection("lush_addlist");
+        collection = dbconn.db("id304").collection("lush_order");
 
         var query = { member_id: idx, product_code: product_code };
         var result = await collection.findOne(query);
@@ -136,9 +138,9 @@ router.put('/cnt-minus', checkToken, async function (req, res, next) {
 
         // 결과값 반환
         if (result.matchedCount === 1) {
-            return res.send({ ret: 1, data: '물품 수량 1 감소.' });
+            return res.send({ ret: 1, data: '물품수량이 1 감소했습니다.' });
         }
-        res.send({ ret: 0, data: '물품 수량 감소 실패.' });
+        res.send({ ret: 0, data: '물품수량 감소에 실패했습니다.' });
     }
     catch (error) {
         console.error(error);
@@ -158,7 +160,7 @@ router.put('/cnt-plus', checkToken, async function (req, res, next) {
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
-        collection = dbconn.db("id304").collection("lush_addlist");
+        collection = dbconn.db("id304").collection("lush_order");
 
         var query = { member_id: idx, product_code: product_code };
         var result = await collection.findOne(query);
@@ -174,9 +176,9 @@ router.put('/cnt-plus', checkToken, async function (req, res, next) {
 
         // 결과값 반환
         if (result.matchedCount === 1) {
-            return res.send({ ret: 1, data: '물품 수량 1 증가.' });
+            return res.send({ ret: 1, data: '물품수량이 1 증가했습니다.' });
         }
-        res.send({ ret: 0, data: '물품 수량 증가 실패.' });
+        res.send({ ret: 0, data: '물품수량 증가에 실패했습니다.' });
     }
     catch (error) {
         console.error(error);
@@ -185,8 +187,8 @@ router.put('/cnt-plus', checkToken, async function (req, res, next) {
 });
 
 //최종주문하기
-// put > localhost:3000/order/order
-router.put('/order', checkToken, async function (req, res, next) {
+// put > localhost:3000/order/confirm
+router.put('/confirm', checkToken, async function (req, res, next) {
     try {
         // 1. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -198,7 +200,7 @@ router.put('/order', checkToken, async function (req, res, next) {
 
         const _id = Number(seqResult.value.seq);
 
-        collection = dbconn.db('id304').collection('lush_addlist');
+        collection = dbconn.db('id304').collection('lush_order');
 
         const member_id = req.idx;
 
@@ -234,14 +236,14 @@ router.put('/order', checkToken, async function (req, res, next) {
 
 
 //선택하여 주문 목록 물품삭제
-//http://127.0.0.1:3000/order/deleteSelect
-router.delete('/deleteSelect', checkToken, async function (req, res, next) {
+//http://127.0.0.1:3000/order/revoke
+router.delete('/revoke', checkToken, async function (req, res, next) {
     try {
         const chks = req.body.chks;
         const member_id = req.idx;
         //배열로 받아지는지 ??
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db('id304').collection('lush_addlist');
+        var collection = dbconn.db('id304').collection('lush_order');
         
         if (typeof(chks) === 'String') {
             // 1. 조건1 chks === 문자로 올때
@@ -249,10 +251,10 @@ router.delete('/deleteSelect', checkToken, async function (req, res, next) {
             const result = await collection.deleteOne(query);
 
             if (result.deletedCount === 1) {
-                res.send({ ret: 1, data: '삭제 성공' });
+                res.send({ ret: 1, data: '선택한 물품을 목록에서 삭제 하였습니다' });
                 return;
             }
-            res.send({ ret: 0, data: '삭제 실패' });
+            res.send({ ret: 0, data: '목록에서 물품을 삭제하지 못했습니다' });
         } else {
             // 2. 조건2 chks > 1
             // 배열, 오브젝트로 올때
@@ -268,10 +270,10 @@ router.delete('/deleteSelect', checkToken, async function (req, res, next) {
             }
 
             if (count === chks.length) {
-                res.send({ ret: 1, data: '삭제 성공' });
+                res.send({ ret: 1, data: '선택한 물품을 목록에서 삭제 하였습니다' });
                 return;
             }
-            res.send({ ret: 0, data: '삭제 실패' });
+            res.send({ ret: 0, data: '목록에서 물품을 삭제하지 못했습니다' });
         }
     }
     catch (error) {
@@ -281,14 +283,14 @@ router.delete('/deleteSelect', checkToken, async function (req, res, next) {
 
 
 // 과거 주문목록
-// GET > localhost:3000/order/order1
-router.get('/order1', checkToken, async function (req, res, next) {
+// GET > localhost:3000/order/past-order
+router.get('/past-order', checkToken, async function (req, res, next) {
     try {
         const member_id = req.idx;
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db("id304").collection("lush_addlist");
+        var collection = dbconn.db("id304").collection("lush_order");
 
         //과거주문내역 불러오는 조건
         //아이디동일, order값이 true일 경우
@@ -305,6 +307,7 @@ router.get('/order1', checkToken, async function (req, res, next) {
     }
 });
 
+// 주문의 상태를 나타나게 하는것 3개의 상태로 새로운 column추가 하는것 삭제라기보다 새컬럼에 부여하는 역할
 // 주문 취소( 입금대기 )
 // DELETE > localhost:3000/order/ordercancle
 router.delete('/ordercancle', checkToken, async function (req, res, next) {
@@ -313,7 +316,7 @@ router.delete('/ordercancle', checkToken, async function (req, res, next) {
         const member_id = req.idx;
 
         const dbconn = await mongoClient.connect(mongourl);
-        var collection = dbconn.db("id304").collection("lush_addlist");
+        var collection = dbconn.db("id304").collection("lush_order");
 
         const query = {order_no : order_no, member_id : member_id};
 
@@ -322,7 +325,7 @@ router.delete('/ordercancle', checkToken, async function (req, res, next) {
         console.log(result);
 
         if(result.acknowledged ===true){
-            res.send({ret:1, data:'주문 취소 되었습니다'});
+            res.send({ret:1, data:'주문이 취소 되었습니다'});
             return;
         }
         res.send({ret:0, data:'주문을 취소하지 못했습니다'});
@@ -333,7 +336,5 @@ router.delete('/ordercancle', checkToken, async function (req, res, next) {
         res.send({ ret: 1, data: error });
     }
 });
-
-
 
 module.exports = router;
