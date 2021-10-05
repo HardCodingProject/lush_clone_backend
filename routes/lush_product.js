@@ -161,7 +161,7 @@ router.get('/image/count', async function (req, res, next) {
 
 // 물품 타입 이미지 조회 => N번 반복 수행 
 // GET > http://localhost:3000/product/type/image
-router.get('/type-image', async function (req, res, next) {
+router.get('/type/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const product_code = Number(req.body.product_code);
@@ -186,7 +186,7 @@ router.get('/type-image', async function (req, res, next) {
 
 // 물품 타입 이미지 개수 조회 
 // GET > http://localhost:3000/product/type/image/count
-router.get('/type-image/count', async function (req, res, next) {
+router.get('/type/image/count', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const product_code = Number(req.body.product_code);
