@@ -32,7 +32,7 @@ router.put('/addcart', checkToken, async function (req, res, next) {
         //이용자가 일치하고 추가할 물품의 코드가 일치해야한다
         var query = { member_id: idx, product_code: product_code };
         var result = await collection.findOne(query);
-        
+
 
         // 해당 번호의 물품이 존재하지 않을경우,
         if (result === null) {
@@ -97,7 +97,7 @@ router.get('/cart', checkToken, async function (req, res, next) {
         //주문내역 불러오는 조건
         //아이디동일, order값이 false일 경우
         const query = { member_id: member_id, order: false };
-        const result = await collection.find(query).sort({product_code : 1}).toArray();
+        const result = await collection.find(query).sort({ product_code: 1 }).toArray();
 
         console.log(result);
 
@@ -210,7 +210,7 @@ router.put('/confirm', checkToken, async function (req, res, next) {
         //console.log(result);
         //주문 목록개수
 
-        let count=0;
+        let count = 0;
 
         for (let i = 0; i < result; i++) {
             const changeData = { $set: { address_number: 1, order_no: _id, order: true, regdate: new Date() } };
@@ -234,7 +234,6 @@ router.put('/confirm', checkToken, async function (req, res, next) {
     }
 });
 
-
 //선택하여 주문 목록 물품삭제
 //http://127.0.0.1:3000/order/revoke
 router.delete('/revoke', checkToken, async function (req, res, next) {
@@ -244,8 +243,8 @@ router.delete('/revoke', checkToken, async function (req, res, next) {
         //배열로 받아지는지 ??
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db('id304').collection('lush_order');
-        
-        if (typeof(chks) === 'String') {
+
+        if (typeof (chks) === 'String') {
             // 1. 조건1 chks === 문자로 올때
             const query = { product_code: Number(chks), member_id: member_id };
             const result = await collection.deleteOne(query);
@@ -281,7 +280,6 @@ router.delete('/revoke', checkToken, async function (req, res, next) {
     }
 });
 
-
 // 과거 주문목록
 // GET > localhost:3000/order/past-order
 router.get('/past-order', checkToken, async function (req, res, next) {
@@ -295,7 +293,7 @@ router.get('/past-order', checkToken, async function (req, res, next) {
         //과거주문내역 불러오는 조건
         //아이디동일, order값이 true일 경우
         const query = { member_id: member_id, order: true };
-        const result = await collection.find(query).sort({product_code : 1}).toArray();
+        const result = await collection.find(query).sort({ product_code: 1 }).toArray();
 
         console.log(result);
 
@@ -318,17 +316,17 @@ router.delete('/ordercancle', checkToken, async function (req, res, next) {
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db("id304").collection("lush_order");
 
-        const query = {order_no : order_no, member_id : member_id};
+        const query = { order_no: order_no, member_id: member_id };
 
         const result = await collection.deleteMany(query);
 
         console.log(result);
 
-        if(result.acknowledged ===true){
-            res.send({ret:1, data:'주문이 취소 되었습니다'});
+        if (result.acknowledged === true) {
+            res.send({ ret: 1, data: '주문이 취소 되었습니다' });
             return;
         }
-        res.send({ret:0, data:'주문을 취소하지 못했습니다'});
+        res.send({ ret: 0, data: '주문을 취소하지 못했습니다' });
 
 
     } catch (error) {
