@@ -54,7 +54,7 @@ router.get('/', async function (req, res, next) {
         const result = await collection.findOne(query);
 
         // 4. 결과 값 반환
-        return res.send({ ret: 1, data: result });        
+        return res.send({ ret: 1, data: result });
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -226,7 +226,7 @@ router.get('/detail', async function (req, res, next) {
         const result = await collection.findOne(query);
 
         // 4. 결과 값 반환
-        return res.send({ ret: 1, data: result });        
+        return res.send({ ret: 1, data: result });
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -526,5 +526,28 @@ router.delete('/review/delete', checkToken, async function (req, res, next) {
     }
 });
 
+router.get('/image/list', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_code = Number(req.query.code);
+        console.log(product_code);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_image');
+
+        // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
+        const query = { product_code: product_code };
+        const result = await collection.findOne(query, { projection: { filedata: 1, filetype: 1 } });
+
+        // 4. 결과 값 반환
+        res.contentType(result.filetype);
+        res.send(result.filedata.buffer);
+        res.end;
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
 
 module.exports = router;
