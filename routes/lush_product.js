@@ -1,6 +1,7 @@
 // 파일명: lush_product.js
 var express = require('express');
-var router = express.Router();
+var router = express.Router(); 
+
 
 // MongoDB 라이브러리
 const mongoClient = require('mongodb').MongoClient;
