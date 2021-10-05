@@ -77,7 +77,12 @@ router.get('/checkid', async function (req, res, next) {
         dbconn.close();
 
         // 5. 결과 값 리턴(0일 경우 일치하는 아이디가 없음, 1일 경우 일치하는 아이디가 존재)
-        res.send({ ret: 1, data: result });
+        if(result === 1){
+            res.send({ ret: 1, data: '이미 사용 중인 아이디입니다.'});
+        }
+        else{
+            res.send({ret:0, data : '사용가능한 아이디입니다.'});
+        }
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
