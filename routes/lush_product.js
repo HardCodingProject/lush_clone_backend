@@ -170,8 +170,8 @@ router.get('/image/count', async function (req, res, next) {
 router.get('/type/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_code = Number(req.body.product_code);
-        const priority = Number(req.body.priority);
+        const product_code = Number(req.query.product_code);
+        const priority = Number(req.query.priority);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
