@@ -143,7 +143,7 @@ router.post('/login', async function (req, res, next) {
     }
 });
 
-// 회원정보수정(이름, 이메일, 휴대폰번호, 우편번호, 배송주소)
+// 회원정보수정(이름, 이메일, 휴대폰번호, 우편번호, 배송주소, 새비밀번호)
 // PUT > localhost:3000/member/update
 router.put('/update', checkToken, async function (req, res, next) {
     try {
@@ -154,59 +154,41 @@ router.put('/update', checkToken, async function (req, res, next) {
         const phone = req.body.phone;
         const zip_code = req.body.zip_code;
         const shipping_address = req.body.shipping_address
+        const new_password = req.body.new_password;
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         const collection = dbconn.db('id304').collection('lush_member');
 
-        // 3. DB에 변경할 정보 업데이트
-        const query = { _id: id };
-        const changeData = { $set: { name: name, email: email, phone: phone, zip_code: zip_code, shipping_address: shipping_address } };
-        const result = await collection.updateOne(query, changeData);
+        if (new_password === '') {
+            // DB에 변경할 정보 업데이트
+            const query = { _id: id };
+            const changeData = { $set: { name: name, email: email, phone: phone, zip_code: zip_code, shipping_address: shipping_address } };
+            const result = await collection.updateOne(query, changeData);
 
-        // 4. DB닫기
-        dbconn.close();
+            // DB닫기
+            dbconn.close();
 
-        // 5. 결과 값 리턴
-        if (result.matchedCount === 1) {
-            return res.send({ ret: 1, data: `회원정보 수정을 성공하였습니다.` });
+            // 결과 값 리턴
+            if (result.matchedCount === 1) {
+                return res.send({ ret: 1, data: `회원정보 수정을 성공하였습니다.` });
+            }
+            res.send({ ret: 0, data: '회원정보 수정을 실패하였습니다.' });
+        } else {
+            // 비밀번호 해시
+            const salt = id;
+            const hash_new_password = crypto.createHmac('sha256', salt).update(req.body.password).digest('hex');
+
+            // DB에 변경할 정보 업데이트
+            const query = { _id: id };
+            const changeData = { $set: { password: hash_new_password, name: name, email: email, phone: phone, zip_code: zip_code, shipping_address: shipping_address } };
+
+            // 결과 값 리턴
+            if (result.matchedCount === 1) {
+                return res.send({ ret: 1, data: `회원정보 수정을 성공하였습니다.` });
+            }
+            res.send({ ret: 0, data: '회원정보 수정을 실패하였습니다.' });
         }
-        res.send({ ret: 0, data: '회원정보 수정을 실패하였습니다.' });
-    } catch (error) {
-        console.error(error);
-        res.send({ ret: -1, data: error });
-    }
-});
-
-// 비밀번호 변경
-// PUT > localhost:3000/member/changepw
-router.put('/changepw', checkToken, async function (req, res, next) {
-    try {
-        // 1. 토큰 인증 후 전달 값 받기
-        const id = req.idx;
-        const newPassword = req.body.newPassword;
-
-        // 2. DB연결
-        const dbconn = await mongoClient.connect(mongourl);
-        const collection = dbconn.db('id304').collection('lush_member');
-
-        // 3. 새로운 비밀번호
-        const salt = req.idx;
-        const hashNewPassword = crypto.createHmac('sha256', salt).update(newPassword).digest('hex');
-
-        // 4. DB수정
-        const query = { _id: id };
-        const changeData = { $set: { password: hashNewPassword } };
-        const result = await collection.updateOne(query, changeData);
-
-        // 5. DB닫기
-        dbconn.close();
-
-        // 6. 결과 값 반환
-        if (result.matchedCount === 1) {
-            return res.send({ ret: 1, data: '비밀번호 수정을 성공하였습니다.' });
-        }
-        res.send({ ret: 0, data: '비밀번호 수정을 실패하였습니다.' });
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -215,18 +197,18 @@ router.put('/changepw', checkToken, async function (req, res, next) {
 
 // 비밀번호 체크 => 이전에 사용한 비밀번호인 경우 사용할 수 없음
 // GET > localhost:3000/member/checkpw
-router.get('/checkpw', checkToken, async function (req, res, next) {
+router.post('/checkpw', checkToken, async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const id = req.idx;
+        const id = req.body.idx;
         const newPassword = req.body.newPassword;
-
+        console.log(id, newPassword);
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. 새로운 비밀번호
-        const salt = req.idx;
+        const salt = req.body.idx;
         const hashNewPassword = crypto.createHmac('sha256', salt).update(newPassword).digest('hex');
 
         // 4. DB수정
@@ -235,7 +217,7 @@ router.get('/checkpw', checkToken, async function (req, res, next) {
 
         // 4. DB닫기
         dbconn.close();
-
+        console.log(result);
         // 5. 결과 값 리턴(0일 경우 일치하는 새로운 비밀번호 적용, 1일 경우 이전 비밀번호와 동일)
         res.send({ ret: 1, data: result });
     } catch (error) {
