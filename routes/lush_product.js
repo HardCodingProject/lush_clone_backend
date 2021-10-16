@@ -118,7 +118,7 @@ router.get('/search/list', async function (req, res, next) {
 router.get('/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_code = Number(req.body.product_code);
+        const product_code = Number(req.query.product_code);
         const priority = Number(req.body.priority);
 
         // 2. DB연결
@@ -126,7 +126,7 @@ router.get('/image', async function (req, res, next) {
         const collection = dbconn.db('id304').collection('lush_product_image');
 
         // 3. 입력 값을 포함하여 검색 (20개를 기준으로 페이지네이션)
-        const query = { category_code: category_code };
+        const query = { product_code: product_code };
         const result = await collection.find(query).sort({ _id: 1 }).toArray();
         // const result = await collection.find(query).sort({ _id: 1 }).skip((page - 1) * 20).limit(20).toArray();
 

@@ -200,19 +200,21 @@ router.put('/update', checkToken, async function (req, res, next) {
 router.post('/checkpw', checkToken, async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const id = req.body.idx;
-        const newPassword = req.body.newPassword;
-        console.log(id, newPassword);
+        const id = req.idx;
+        const Password = req.body.Password;
+        console.log(Password);
+
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. 새로운 비밀번호
         const salt = req.body.idx;
-        const hashNewPassword = crypto.createHmac('sha256', salt).update(newPassword).digest('hex');
+        console.log(salt);
+        const hashPassword = crypto.createHmac('sha256', salt).update(Password).digest('hex');
 
         // 4. DB수정
-        const query = { _id: id, password: hashNewPassword };
+        const query = {$and : [{_id: id, password: hashPassword}]};
         const result = await collection.countDocuments(query);
 
         // 4. DB닫기
