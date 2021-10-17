@@ -196,22 +196,26 @@ router.put('/update', checkToken, async function (req, res, next) {
 });
 
 // 비밀번호 체크 => 이전에 사용한 비밀번호인 경우 사용할 수 없음
-// GET > localhost:3000/member/checkpw
+// POST > localhost:3000/member/checkpw
 router.post('/checkpw', checkToken, async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const id = req.idx;
-        const Password = req.body.Password;
-        console.log(Password);
+        const Password = req.body.password;
+        console.log(req.body);
+        console.log(typeof(Password));
+
+        console.log("===================================================");
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         const collection = dbconn.db('id304').collection('lush_member');
 
         // 3. 새로운 비밀번호
-        const salt = req.body.idx;
-        console.log(salt);
+        const salt = id;
+        console.log(typeof(salt));
         const hashPassword = crypto.createHmac('sha256', salt).update(Password).digest('hex');
+        console.log(hashPassword);
 
         // 4. DB수정
         const query = {$and : [{_id: id, password: hashPassword}]};
