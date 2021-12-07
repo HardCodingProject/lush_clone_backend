@@ -179,6 +179,7 @@ router.get('/type/image', async function (req, res, next) {
 
         // 3. 조건검색
         const query = { product_code: product_code, priority: priority };
+        console.log(query);
         const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
 
         // 4. 결과 값 반환
@@ -195,7 +196,7 @@ router.get('/type/image', async function (req, res, next) {
 router.get('/type/image/count', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_code = Number(req.body.product_code);
+        const product_code = Number(req.query.product_code);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -204,6 +205,7 @@ router.get('/type/image/count', async function (req, res, next) {
         // 3. 조건검색
         const query = { product_code: product_code };
         const result = await collection.countDocuments(query);
+        console.log(result);
 
         // 4. 결과 값 반환
         if (result > 0) {
@@ -221,7 +223,7 @@ router.get('/type/image/count', async function (req, res, next) {
 router.get('/detail', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_code = Number(req.body.product_code);
+        const product_code = Number(req.query.code);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -239,13 +241,38 @@ router.get('/detail', async function (req, res, next) {
     }
 });
 
+// 물품 상세 이미지 설명 조회
+// GET > http://localhost:3000/product/detail/image/desc
+router.get('/detail/image/desc', async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const product_detail_no = Number(req.query.product_detail_no);
+        const priority = Number(req.query.priority);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        var collection = dbconn.db('id304').collection('lush_product_detail_image');
+
+        // 3. product_code를 조건으로 설정하여 검색
+        const query = { product_detail_no: product_detail_no, priority: priority };
+        console.log(query);
+        const result = await collection.findOne(query);
+
+        // 4. 결과 값 반환
+        return res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
 // 물품 상세 이미지 조회 => N번 반복 수행 
 // GET > http://localhost:3000/product/detail/image
 router.get('/detail/image', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_detail_no = Number(req.body.product_detail_no);
-        const priority = Number(req.body.priority);
+        const product_detail_no = Number(req.query.product_detail_no);
+        const priority = Number(req.query.priority);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -254,7 +281,7 @@ router.get('/detail/image', async function (req, res, next) {
         // 3. 조건검색
         const query = { product_detail_no: product_detail_no, priority: priority };
         const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
-
+        
         // 4. 결과 값 반환
         res.contentType(result.filetype);
         res.send(result.filedata.buffer);
@@ -269,7 +296,7 @@ router.get('/detail/image', async function (req, res, next) {
 router.get('/detail/image/count', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
-        const product_detail_no = Number(req.body.product_detail_no);
+        const product_detail_no = Number(req.query.code);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -277,7 +304,7 @@ router.get('/detail/image/count', async function (req, res, next) {
 
         // 3. 조건검색
         const query = { product_detail_no: product_detail_no };
-        const result = await collection.countDocuments(query);
+        const result = await collection.count(query);
 
         // 4. 결과 값 반환
         if (result > 0) {
