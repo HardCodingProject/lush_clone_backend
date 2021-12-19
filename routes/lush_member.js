@@ -182,6 +182,7 @@ router.put('/update', checkToken, async function (req, res, next) {
             // DB에 변경할 정보 업데이트
             const query = { _id: id };
             const changeData = { $set: { password: hash_new_password, name: name, email: email, phone: phone, zip_code: zip_code, shipping_address: shipping_address } };
+            const result = await collection.updateOne(query, changeData);
 
             // 결과 값 리턴
             if (result.matchedCount === 1) {

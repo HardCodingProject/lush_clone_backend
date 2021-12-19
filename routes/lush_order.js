@@ -80,7 +80,7 @@ router.put('/addcart', checkToken, async function (req, res, next) {
         }
     } catch (error) {
         console.error(error);
-        res.send({ ret: 1, data: error });
+        res.send({ ret: -1, data: error });
     }
 });
 
