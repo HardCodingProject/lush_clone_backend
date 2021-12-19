@@ -10,7 +10,7 @@ const mongoClient = require('mongodb').MongoClient;
 const mongourl = 'mongodb://id304:pw304@1.234.5.158:37017/id304';
 
 // 로그인 토큰 발행
-const randToken = require('rand-token');
+const randToken = require('rand-token'); 
 const jwt = require('jsonwebtoken');
 const secretKey = require('../config/secretkey').secretKey;
 const options = require('../config/secretkey').options;
@@ -104,6 +104,7 @@ router.post('/login', async function (req, res, next) {
         const query = { _id: id, password: hashPassword };
         const result = await collection.findOne(query);
 
+        console.log("결과" , result);
         // 5. 결과 값에 따라 토큰 생성
         if (typeof (result) !== 'undefined') {
             // 5-1. 토큰에 저장되는 내용
@@ -294,6 +295,32 @@ router.delete('/delete', checkToken, async function (req, res, next) {
             return res.send({ret: 1, data: '회원탈퇴 성공'});
         }
         res.send({ret: 0, data: '회원탈퇴 실패'});
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 회원정보 조회
+// GET > localhost:3000/member/detail
+router.get('/detail', checkToken, async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const id = req.idx;
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_member');
+      
+        // 3. DB조회
+        const query = { _id: id };
+        const result = await collection.findOne(query, { projection:{ password: 0, token: 0 }});
+
+        // 4. DB닫기
+        dbconn.close();
+
+        // 5. 결과 값 리턴
+        res.send({ret: 1, data: result});
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
