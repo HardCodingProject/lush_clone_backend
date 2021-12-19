@@ -328,7 +328,6 @@ router.delete('/ordercancle', checkToken, async function (req, res, next) {
         }
         res.send({ ret: 0, data: '주문을 취소하지 못했습니다' });
 
-
     } catch (error) {
         console.error(error);
         res.send({ ret: 1, data: error });

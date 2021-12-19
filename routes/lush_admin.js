@@ -302,7 +302,7 @@ router.get('/product/type-image', async function (req, res, next) {
 
         // 3. 조회 조건
         const query = { product_code: product_code, priority: product_priority };
-        const result = await collection.findOne(query, { projection: { name, originalname: 1, filedata: 1, filetype: 1 } });
+        const result = await collection.findOne(query, { projection: { originalname: 1, filedata: 1, filetype: 1 } });
 
         // 4. 이미지 출력
         res.contentType(result.filetype);
@@ -352,9 +352,9 @@ router.post('/category/register', async function (req, res, next) {
     }
 });
 
-// 카테고리 목록 조회
-// GET > http://localhost:3000/admin/category/list?name=카테고리 명
-router.get('/category/list', async function (req, res, next) {
+// 카테고리 목록 검색
+// GET > http://localhost:3000/admin/category/search?name=카테고리 명
+router.get('/category/search', async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const category_name = req.query.name;
@@ -369,6 +369,30 @@ router.get('/category/list', async function (req, res, next) {
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 카테고리 목록 조회
+// GET > http://localhost:3000/admin/category/list
+router.get('/category/list', async function (req, res, next) {
+    try {
+        // 1. lush_category 컬렉션으로 DB설정
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_category');
+
+        // 2. 카테고리 목록 조회
+        const query = { };
+        const result = await collection.find(query).sort({ _id: 1 }).toArray();
+
+        // 3. 결과 값 반환
+        if(result.length > 0 ) {
+            res.send({ ret: 1, data: result });
+        }else {
+            res.send({ ret: 1, data: "카테고리가 등록되지 않았습니다."});
+        }
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
@@ -417,10 +441,11 @@ router.delete('/category/delete', async function (req, res, next) {
         // 3. query의 조건에 부합하는 항목 삭제
         const query = { _id: category_code };
         const result = await collection.deleteOne(query);
+        console.log(result);
 
         // 4. 결과 값 반환
-        if (result.matchedCount === 1) {
-            return res.send({ ret: 1, data: `${result.matchedCount}개의 카테고리를 삭제하였습니다.` });
+        if (result.deletedCount === 1) {
+            return res.send({ ret: 1, data: `${result.deletedCount}개의 카테고리를 삭제하였습니다.` });
         }
         res.send({ ret: 0, data: '카테고리 삭제를 실패했습니다.' });
     } catch (error) {

@@ -1,1 +1,8 @@
-# lush_clone_backend
+# Problems and Solutions
+## 
+
+---
+
+## 
+
+---
