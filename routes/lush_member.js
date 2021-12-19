@@ -202,10 +202,6 @@ router.post('/checkpw', checkToken, async function (req, res, next) {
         // 1. 전달 값 받기
         const id = req.idx;
         const Password = req.body.password;
-        console.log(req.body);
-        console.log(typeof(Password));
-
-        console.log("===================================================");
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);

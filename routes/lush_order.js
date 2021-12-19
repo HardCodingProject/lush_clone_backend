@@ -24,6 +24,7 @@ router.put('/addcart', checkToken, async function (req, res, next) {
         const product_code = Number(req.body.product_code);   // 물품코드
         const product_count = Number(req.body.product_count); // 물품수량
         const order = false; // 장바구니/주문
+        console.log(req.body);
 
         //db연동
         const dbconn = await mongoClient.connect(mongourl);
