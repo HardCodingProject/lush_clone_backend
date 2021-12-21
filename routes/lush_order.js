@@ -22,6 +22,9 @@ router.put('/addcart', checkToken, async function (req, res, next) {
         //전달되는 값
         const idx = req.idx; // 회원아이디
         const product_code = Number(req.body.product_code);   // 물품코드
+        const product_name = req.body.product_name; //물품명
+        const product_category = "배쓰밤"; //물품카테고리
+        const product_price = Number(req.body.product_price); //물품가격
         const product_count = Number(req.body.product_count); // 물품수량
         const order = false; // 장바구니/주문
         console.log(req.body);
@@ -41,6 +44,9 @@ router.put('/addcart', checkToken, async function (req, res, next) {
             const orderData = {
                 member_id: idx,
                 product_code: product_code,
+                product_name : product_name,
+                product_category : product_category,
+                product_price : product_price,
                 product_count: product_count,
                 order: order,
             }
@@ -99,8 +105,6 @@ router.get('/cart', checkToken, async function (req, res, next) {
         //아이디동일, order값이 false일 경우
         const query = { member_id: member_id, order: false };
         const result = await collection.find(query).sort({ product_code: 1 }).toArray();
-
-        console.log(result);
 
         // 결과 값 반환
         res.send({ ret: 1, data: result })
@@ -239,16 +243,19 @@ router.put('/confirm', checkToken, async function (req, res, next) {
 //http://127.0.0.1:3000/order/revoke
 router.delete('/revoke', checkToken, async function (req, res, next) {
     try {
-        const chks = req.body.chks;
+        const chks = req.query.chks.split(",");
+        console.log(req.query);
+        console.log(typeof(chks));
         const member_id = req.idx;
         //배열로 받아지는지 ??
         const dbconn = await mongoClient.connect(mongourl);
         var collection = dbconn.db('id304').collection('lush_order');
 
-        if (typeof (chks) === 'String') {
+        if (typeof (chks) === 'string') {
             // 1. 조건1 chks === 문자로 올때
             const query = { product_code: Number(chks), member_id: member_id };
             const result = await collection.deleteOne(query);
+            console.log(result);
 
             if (result.deletedCount === 1) {
                 res.send({ ret: 1, data: '선택한 물품을 목록에서 삭제 하였습니다' });
@@ -263,6 +270,7 @@ router.delete('/revoke', checkToken, async function (req, res, next) {
             for (let i = 0; i < chks.length; i++) {
                 const query = { product_code: Number(chks[i]), member_id: member_id };
                 const result = await collection.deleteOne(query);
+                console.log(result);
                 // deletedCount
                 if (result.deletedCount === 1) {
                     count++;
