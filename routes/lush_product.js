@@ -202,14 +202,13 @@ router.get('/type/image/count', async function (req, res, next) {
 
         // 3. 조건검색
         const query = { product_code: product_code };
-        const result = await collection.countDocuments(query);
-        console.log(result);
+        const result = await collection.find(query).toArray();
+        // console.log(result);
 
         // 4. 결과 값 반환
-        if (result > 0) {
-            return res.send({ ret: 1, data: result });
-        }
-        res.send({ ret: 0, data: '일치하는 항목을 찾지 못했습니다.' });
+
+        return res.send({ ret: 1, data: result });
+
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
