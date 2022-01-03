@@ -356,7 +356,31 @@ router.get('/review/image', async function (req, res, next) {
     }
 });
 
-// 자신이 작성한 물품후기 조회
+// 자신이 작성한 물품후기 1개 조회
+// GET > localhost:3000/product/review?no=후기번호
+router.get('/review', checkToken, async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const member_id = req.idx;
+        const product_review_no = Number(req.query.no);
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_product_review');
+
+        // 3. 입력 값을 포함하여 검색
+        const query = { _id: product_review_no, member_id: member_id };
+        const result = await collection.findOne(query, { projection: { originalname: 0, filedata: 0, filetype: 0 } });
+
+        // 4. 결과 값 반환
+        res.send({ ret: 1, data: result });
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 자신이 작성한 물품후기 조회(전부)
 // GET > localhost:3000/product/review
 router.get('/review', checkToken, async function (req, res, next) {
     try {
@@ -369,7 +393,7 @@ router.get('/review', checkToken, async function (req, res, next) {
 
         // 3. 입력 값을 포함하여 검색
         const query = { member_id: member_id };
-        const result = await collection.findOne(query, { projection: { originalname: 0, filedata: 0, filetype: 0 } });
+        const result = await collection.find(query, { projection: { originalname: 0, filedata: 0, filetype: 0 } }).toArray();
 
         // 4. 결과 값 반환
         res.send({ ret: 1, data: result });
@@ -378,6 +402,7 @@ router.get('/review', checkToken, async function (req, res, next) {
         res.send({ ret: -1, data: error });
     }
 });
+
 
 // 물품후기 등록
 // POST > http://localhost:3000/product/review/register
