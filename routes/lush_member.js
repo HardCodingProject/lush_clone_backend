@@ -240,7 +240,7 @@ router.post('/logout', checkToken, async function (req, res, next) {
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         const collection = dbconn.db('id304').collection('lush_member');
-      
+        
         // 3. DB UPDATE를 통해 TOKEN값 삭제
         const query = { _id: id};
         const changeData = {$set: {token: ''}};
@@ -271,7 +271,7 @@ router.delete('/delete', checkToken, async function (req, res, next) {
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
         const collection = dbconn.db('id304').collection('lush_member');
-      
+
         // 3. DB삭제
         const query = { _id: id};
         const result = await collection.deleteOne(query);
@@ -285,6 +285,32 @@ router.delete('/delete', checkToken, async function (req, res, next) {
             return res.send({ret: 1, data: '회원탈퇴 성공'});
         }
         res.send({ret: 0, data: '회원탈퇴 실패'});
+    } catch (error) {
+        console.error(error);
+        res.send({ ret: -1, data: error });
+    }
+});
+
+// 회원정보 조회
+// GET > localhost:3000/member/detail
+router.get('/detail', checkToken, async function (req, res, next) {
+    try {
+        // 1. 전달 값 받기
+        const id = req.idx;
+
+        // 2. DB연결
+        const dbconn = await mongoClient.connect(mongourl);
+        const collection = dbconn.db('id304').collection('lush_member');
+        
+        // 3. DB조회
+        const query = { _id: id };
+        const result = await collection.findOne(query, { projection:{ password: 0, token: 0 }});
+
+        // 4. DB닫기
+        dbconn.close();
+
+        // 5. 결과 값 리턴
+        res.send({ret: 1, data: result});
     } catch (error) {
         console.error(error);
         res.send({ ret: -1, data: error });
