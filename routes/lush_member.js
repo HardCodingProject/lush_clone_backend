@@ -236,6 +236,7 @@ router.post('/logout', checkToken, async function (req, res, next) {
     try {
         // 1. 전달 값 받기
         const id = req.idx;
+        console.log(id);
 
         // 2. DB연결
         const dbconn = await mongoClient.connect(mongourl);
@@ -245,7 +246,7 @@ router.post('/logout', checkToken, async function (req, res, next) {
         const query = { _id: id};
         const changeData = {$set: {token: ''}};
         const result = await collection.updateOne(query, changeData);
-        sessionStorage.removeItem('TOKEN');
+        // sessionStorage.removeItem('TOKEN');
 
         // 4. DB닫기
         dbconn.close();
